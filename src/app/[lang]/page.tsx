@@ -4,6 +4,7 @@ import Link from "next/link";
 import { translations, Language } from "@/data/translations";
 import { ArrowRight, ShieldCheck, Leaf, Compass, HelpCircle } from "lucide-react";
 import ShowcaseSlider from "@/components/ShowcaseSlider";
+import ShowroomsSection from "@/components/ShowroomsSection";
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -199,6 +200,9 @@ export default function HomePage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {/* Showrooms & Map Section */}
+      <ShowroomsSection lang={lang} />
     </div>
   );
 }

@@ -113,6 +113,31 @@ export const translations = {
       address: 'Headquarters & Showroom',
       addressDetail: 'Cairo, Egypt (Distribution across Middle East)',
     },
+    showrooms: {
+      title: 'Visit Our Showrooms',
+      subtitle: 'Experience the premium Korean quality in person at our local branches.',
+      cairo: {
+        name: 'Cairo Branch (Mokattam)',
+        address: 'Corner of Shabrawy Restaurant, Off Street 9, El Mokattam, Cairo',
+        phone: '+20 104 004 4416',
+        hours: '10:00 AM – 8:00 PM Daily',
+        mapQuery: 'Shabrawy Mokattam Street 9 Cairo Egypt',
+      },
+      giza: {
+        name: 'Giza Branch (6th of October)',
+        address: '255 - 2nd District, Al-Mahwar Al-Markazi, 4th Neighborhood, 6th of October City',
+        phone: '+20 104 004 4417',
+        hours: '10:00 AM – 8:00 PM Daily',
+        mapQuery: '255 2nd District Al-Mahwar Al-Markazi 6th of October Egypt',
+      },
+      alex: {
+        name: 'Alexandria Branch (Smouha)',
+        address: 'Office No. 8, Fifth Tower, Sidi Gaber Towers, Smouha, Alexandria',
+        phone: '+20 104 004 4415',
+        hours: '10:00 AM – 7:00 PM (Daily, except Fridays)',
+        mapQuery: 'Sidi Gaber Towers Smouha Alexandria Egypt',
+      },
+    },
     footer: {
       rights: '© {year} LAN Fawzy For Import & Export. All Rights Reserved.',
       tagline: 'LAN Décor — sole importer of Korean premium decorative wall coverings.',
@@ -229,6 +254,31 @@ export const translations = {
       email: 'البريد الإلكتروني',
       address: 'المقر الرئيسي وصالة العرض',
       addressDetail: 'القاهرة، جمهورية مصر العربية (مع الشحن والتوزيع لكافة الدول العربية)',
+    },
+    showrooms: {
+      title: 'تفضل بزيارة معارضنا',
+      subtitle: 'شاهد الجودة الكورية الفاخرة بنفسك في أحد فروعنا.',
+      cairo: {
+        name: 'فرع القاهرة (المقطم)',
+        address: 'ناصية مطعم الشبراوي، متفرع من شارع 9، المقطم، القاهرة',
+        phone: '+20 104 004 4416',
+        hours: 'يومياً من 10:00 صباحاً – 8:00 مساءً',
+        mapQuery: 'Shabrawy Mokattam Street 9 Cairo Egypt',
+      },
+      giza: {
+        name: 'فرع الجيزة (6 أكتوبر)',
+        address: '255 - الحي الثاني، المحور المركزي، المجاورة الرابعة، مدينة 6 أكتوبر',
+        phone: '+20 104 004 4417',
+        hours: 'يومياً من 10:00 صباحاً – 8:00 مساءً',
+        mapQuery: '255 2nd District Al-Mahwar Al-Markazi 6th of October Egypt',
+      },
+      alex: {
+        name: 'فرع الإسكندرية (سموحة)',
+        address: 'مكتب رقم 8، البرج الخامس، أبراج سيدي جابر، سموحة، الإسكندرية',
+        phone: '+20 104 004 4415',
+        hours: 'من 10:00 صباحاً – 7:00 مساءً (يومياً عدا الجمعة)',
+        mapQuery: 'Sidi Gaber Towers Smouha Alexandria Egypt',
+      },
     },
     footer: {
       rights: '© {year} لان فوزي للاستيراد والتصدير. جميع الحقوق محفوظة.',

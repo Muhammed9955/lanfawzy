@@ -174,13 +174,20 @@ export default function Footer({ lang }: { lang: Language }) {
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <Link
+              href={`/${lang}#showrooms`}
+              className="flex items-start gap-2.5 group hover:text-primary transition-colors duration-200"
+            >
+              <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-200" />
               <div className="flex flex-col">
-                <span className="font-semibold text-white">{t.contact.address}</span>
-                <span>{t.contact.addressDetail}</span>
+                <span className="font-semibold text-white group-hover:text-primary transition-colors duration-200">
+                  {t.contact.address}
+                </span>
+                <span className="text-xs text-premium-beige/60 group-hover:text-premium-beige transition-colors duration-200">
+                  {t.contact.addressDetail}
+                </span>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
