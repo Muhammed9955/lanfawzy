@@ -17,9 +17,7 @@ export default function ShowroomsSection({ lang }: { lang: Language }) {
   )}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 
   // Direct external map link
-  const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    currentBranchData.mapQuery
-  )}`;
+  const externalMapUrl = currentBranchData.mapLink;
 
   return (
     <section id="showrooms" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-primary/10">

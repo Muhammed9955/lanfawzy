@@ -121,7 +121,8 @@ export const translations = {
         address: '5 Hoda Shaarawy St., Off Street 9, El Mokattam, Cairo, Egypt, 21648',
         phone: '+20 104 004 4416',
         hours: '10:00 AM – 8:00 PM Daily',
-        mapQuery: '5 Hoda Shaarawy Street Mokattam Cairo Egypt',
+        mapQuery: '30.0070826,31.3107934',
+        mapLink: 'https://www.google.com/maps/place/Jehad+elmohandes+makeup+artist/@30.0072824,31.3107751,19.5z/data=!4m14!1m7!3m6!1s0x14583913deefb725:0x8a66096865a350e0!2sJehad+elmohandes+makeup+artist!8m2!3d30.0070826!4d31.3107934!16s%2Fg%2F11kqbxct41!3m5!1s0x14583913deefb725:0x8a66096865a350e0!8m2!3d30.0070826!4d31.3107934!16s%2Fg%2F11kqbxct41',
       },
       giza: {
         name: 'Giza Branch (6th of October)',
@@ -129,6 +130,7 @@ export const translations = {
         phone: '+20 104 004 4417',
         hours: '10:00 AM – 8:00 PM Daily',
         mapQuery: '255 2nd District Al-Mahwar Al-Markazi 6th of October Egypt',
+        mapLink: 'https://www.google.com/maps/search/?api=1&query=255%202nd%20District%20Al-Mahwar%20Al-Markazi%206th%20of%20October%20Egypt',
       },
       alex: {
         name: 'Alexandria Branch (Smouha)',
@@ -136,6 +138,7 @@ export const translations = {
         phone: '+20 104 004 4415',
         hours: '10:00 AM – 7:00 PM (Daily, except Fridays)',
         mapQuery: 'Sidi Gaber Towers Smouha Alexandria Egypt',
+        mapLink: 'https://www.google.com/maps/search/?api=1&query=Sidi%20Gaber%20Towers%20Smouha%20Alexandria%20Egypt',
       },
     },
     footer: {
@@ -263,7 +266,8 @@ export const translations = {
         address: '5 شارع هدى شعراوى متفرع من شارع 9 المقطم، القاهرة، مصر، 21648',
         phone: '+20 104 004 4416',
         hours: 'يومياً من 10:00 صباحاً – 8:00 مساءً',
-        mapQuery: '5 Hoda Shaarawy Street Mokattam Cairo Egypt',
+        mapQuery: '30.0070826,31.3107934',
+        mapLink: 'https://www.google.com/maps/place/Jehad+elmohandes+makeup+artist/@30.0072824,31.3107751,19.5z/data=!4m14!1m7!3m6!1s0x14583913deefb725:0x8a66096865a350e0!2sJehad+elmohandes+makeup+artist!8m2!3d30.0070826!4d31.3107934!16s%2Fg%2F11kqbxct41!3m5!1s0x14583913deefb725:0x8a66096865a350e0!8m2!3d30.0070826!4d31.3107934!16s%2Fg%2F11kqbxct41',
       },
       giza: {
         name: 'فرع الجيزة (6 أكتوبر)',
@@ -271,6 +275,7 @@ export const translations = {
         phone: '+20 104 004 4417',
         hours: 'يومياً من 10:00 صباحاً – 8:00 مساءً',
         mapQuery: '255 2nd District Al-Mahwar Al-Markazi 6th of October Egypt',
+        mapLink: 'https://www.google.com/maps/search/?api=1&query=255%202nd%20District%20Al-Mahwar%20Al-Markazi%206th%20of%20October%20Egypt',
       },
       alex: {
         name: 'فرع الإسكندرية (سموحة)',
@@ -278,6 +283,7 @@ export const translations = {
         phone: '+20 104 004 4415',
         hours: 'من 10:00 صباحاً – 7:00 مساءً (يومياً عدا الجمعة)',
         mapQuery: 'Sidi Gaber Towers Smouha Alexandria Egypt',
+        mapLink: 'https://www.google.com/maps/search/?api=1&query=Sidi%20Gaber%20Towers%20Smouha%20Alexandria%20Egypt',
       },
     },
     footer: {
