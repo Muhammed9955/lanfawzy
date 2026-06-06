@@ -118,10 +118,10 @@ export const translations = {
       subtitle: 'Experience the premium Korean quality in person at our local branches.',
       cairo: {
         name: 'Cairo Branch (Mokattam)',
-        address: 'Corner of Shabrawy Restaurant, Off Street 9, El Mokattam, Cairo',
+        address: '5 Hoda Shaarawy St., Off Street 9, El Mokattam, Cairo, Egypt, 21648',
         phone: '+20 104 004 4416',
         hours: '10:00 AM – 8:00 PM Daily',
-        mapQuery: 'Shabrawy Mokattam Street 9 Cairo Egypt',
+        mapQuery: '5 Hoda Shaarawy Street Mokattam Cairo Egypt',
       },
       giza: {
         name: 'Giza Branch (6th of October)',
@@ -260,10 +260,10 @@ export const translations = {
       subtitle: 'شاهد الجودة الكورية الفاخرة بنفسك في أحد فروعنا.',
       cairo: {
         name: 'فرع القاهرة (المقطم)',
-        address: 'ناصية مطعم الشبراوي، متفرع من شارع 9، المقطم، القاهرة',
+        address: '5 شارع هدى شعراوى متفرع من شارع 9 المقطم، القاهرة، مصر، 21648',
         phone: '+20 104 004 4416',
         hours: 'يومياً من 10:00 صباحاً – 8:00 مساءً',
-        mapQuery: 'Shabrawy Mokattam Street 9 Cairo Egypt',
+        mapQuery: '5 Hoda Shaarawy Street Mokattam Cairo Egypt',
       },
       giza: {
         name: 'فرع الجيزة (6 أكتوبر)',
