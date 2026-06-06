@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #b08d5c;
+  --color-primary-light: #c8af8d;
+  --color-primary-dark: #8d6b3e;
+  
+  --color-premium-dark: #0c0c0e;
+  --color-premium-charcoal: #151518;
+  --color-premium-gray: #212126;
+  --color-premium-beige: #f9f8f6;
+  --color-premium-gold: #d4af37;
+  --color-premium-border: rgba(176, 141, 92, 0.2);
+
+  --font-cairo: "Cairo", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  
+  --animate-gold-shimmer: gold-shimmer 2.5s infinite linear;
+  --animate-fade-in-up: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:root {
+  --background: #fdfcfb;
+  --foreground: #151518;
+}
+
+/* Base custom resets */
+html, body {
+  scroll-behavior: smooth;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Custom Scrollbar for premium feeling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #151518;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b08d5c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c8af8d;
+}
+
+/* Glassmorphism utility */
+.premium-glass {
+  background: rgba(21, 21, 24, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 141, 92, 0.15);
+}
+
+.premium-glass-light {
+  background: rgba(253, 252, 251, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 141, 92, 0.1);
+}
+
+/* Premium Gold Text Gradient */
+.gold-text-gradient {
+  background: linear-gradient(135deg, #f9e4b7 0%, #b08d5c 50%, #8d6b3e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+}
+
+.gold-bg-gradient {
+  background: linear-gradient(135deg, #b08d5c 0%, #8d6b3e 100%);
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(to right, #b08d5c, #8d6b3e, #f9e4b7) 1;
+}
+
+/* Interactive Room Visualizer helpers */
+.visualizer-overlay {
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}

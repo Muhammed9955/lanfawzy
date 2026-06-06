@@ -1,0 +1,35 @@
+<svg
+  width="32"
+  height="32"
+  viewBox="0 0 250 250"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  {/* Green Rounded Background Card */}
+  <rect width="250" height="250" rx="60" fill="#0f5b40" />
+
+  {/* LAN Letters Group slanted and centered */}
+  <g transform="translate(5, 75) skewX(-14)">
+    {/* L Shape (Yellow-Gold) */}
+    <path
+      d="M 15 10 h 22 v 55 h 33 v 20 H 15 Z"
+      fill="#F1B82D"
+    />
+    {/* A Shape (Yellow-Gold) */}
+    <path
+      d="M 80 85 L 100 10 H 120 L 140 85 H 120 L 114 55 H 106 L 100 85 H 80 Z M 108 40 H 112 L 110 24 Z"
+      fill="#F1B82D"
+      fill-rule="evenodd"
+    />
+    {/* N Shape Left Column (White Arrow Pointing Down) */}
+    <path
+      d="M 160 10 H 182 L 202 50 L 182 40 V 65 H 192 L 171 90 L 150 65 H 160 Z"
+      fill="#FFFFFF"
+    />
+    {/* N Shape Right Column (White Arrow Pointing Up) */}
+    <path
+      d="M 224 90 H 202 L 182 50 L 202 60 V 35 H 192 L 213 10 L 234 35 H 224 Z"
+      fill="#FFFFFF"
+    />
+  </g>
+</svg>
