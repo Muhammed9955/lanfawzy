@@ -15,10 +15,10 @@ export default function Navbar({ lang }: { lang: Language }) {
 
   const navItems = [
     { name: t.navbar.home, href: `/${lang}`, comingSoon: false },
-    { name: t.navbar.products, href: `/${lang}/products`, comingSoon: true },
+    { name: t.navbar.products, href: `/${lang}/products`, comingSoon: false },
     { name: t.navbar.visualizer, href: `/${lang}/visualizer`, comingSoon: true },
     { name: t.navbar.calculator, href: `/${lang}/calculator`, comingSoon: true },
-    { name: t.navbar.gallery, href: `/${lang}/gallery`, comingSoon: true },
+    { name: t.navbar.gallery, href: `/${lang}/gallery`, comingSoon: false },
   ];
 
   const isActive = (href: string) => {

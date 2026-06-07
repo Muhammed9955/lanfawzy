@@ -5,7 +5,7 @@ import type { NextConfig } from "next";
 // All sub-pages redirect to the locale landing page.
 // Remove the `redirects` function below when you are ready to launch them.
 // ---------------------------------------------------------------------------
-const COMING_SOON_PAGES = ["products", "visualizer", "calculator", "gallery", "contact"];
+const COMING_SOON_PAGES = ["visualizer", "calculator", "contact"];
 const LOCALES = ["en", "ar"];
 
 const comingSoonRedirects = LOCALES.flatMap((locale) =>
