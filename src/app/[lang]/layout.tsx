@@ -3,6 +3,7 @@ import { Cairo, Inter } from "next/font/google";
 import { translations, Language } from "@/data/translations";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import "../globals.css";
 
 const inter = Inter({
@@ -118,6 +119,7 @@ export default async function LanguageLayout({
         <Navbar lang={resolvedLang} />
         <main className="flex-grow">{children}</main>
         <Footer lang={resolvedLang} />
+        <WhatsAppButton lang={resolvedLang} />
       </body>
     </html>
   );
