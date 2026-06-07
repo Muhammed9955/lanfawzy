@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { translations, Language } from "@/data/translations";
 import { productsCatalog, getProductTranslation, getOptimizedImageUrl, Product } from "@/data/products";
-import { Check, Layers, ArrowRight, Download, Search, MessageSquare, Info } from "lucide-react";
+import { Check, Layers, ArrowRight, Download, Search, MessageSquare, Info, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -68,6 +68,44 @@ export default function ProductsPage({ params }: PageProps) {
       : `Hello Fawzy Decor, I am interested in product code ${product.code}. Could you please send me price details and specifications?`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
   };
+
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+  };
+
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+  };
+
+  const nextSlide = () => {
+    if (lightboxIndex === null) return;
+    setLightboxIndex((lightboxIndex + 1) % filteredProducts.length);
+  };
+
+  const prevSlide = () => {
+    if (lightboxIndex === null) return;
+    setLightboxIndex((lightboxIndex - 1 + filteredProducts.length) % filteredProducts.length);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") {
+        if (lang === "ar") prevSlide();
+        else nextSlide();
+      }
+      if (e.key === "ArrowLeft") {
+        if (lang === "ar") nextSlide();
+        else prevSlide();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, lang]);
 
   return (
     <div className="py-16 bg-premium-dark text-premium-beige min-h-screen">
@@ -207,7 +245,7 @@ export default function ProductsPage({ params }: PageProps) {
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
+            {filteredProducts.map((product, idx) => {
               const { name, specifications } = getProductTranslation(product, lang);
               return (
                 <div
@@ -215,7 +253,10 @@ export default function ProductsPage({ params }: PageProps) {
                   className="premium-glass rounded-2xl overflow-hidden border border-primary/10 hover:border-primary/30 hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between group"
                 >
                   {/* Image Container */}
-                  <div className="relative aspect-square w-full bg-premium-charcoal/40 border-b border-primary/10 overflow-hidden shrink-0">
+                  <div
+                    onClick={() => openLightbox(idx)}
+                    className="relative aspect-square w-full bg-premium-charcoal/40 border-b border-primary/10 overflow-hidden shrink-0 cursor-pointer"
+                  >
                     <Image
                       src={getOptimizedImageUrl(product.image, 300, 300)}
                       alt={name}
@@ -223,7 +264,13 @@ export default function ProductsPage({ params }: PageProps) {
                       className="object-cover object-center p-3 rounded-2xl transition-transform duration-500 group-hover:scale-[1.04]"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     />
-                    <div className={`absolute top-3 ${lang === "ar" ? "right-3" : "left-3"} bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs font-bold text-primary-light border border-primary/20`}>
+                    {/* Hover zoom visual overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="px-3 py-1.5 rounded-full bg-primary text-white text-[10px] font-bold shadow-md scale-90 group-hover:scale-100 transition-all duration-300">
+                        {lang === "ar" ? "تفاصيل ومواصفات" : "View Specifications"}
+                      </span>
+                    </div>
+                    <div className={`absolute top-3 ${lang === "ar" ? "right-3" : "left-3"} bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs font-bold text-primary-light border border-primary/20 z-10`}>
                       {product.code}
                     </div>
                   </div>
@@ -311,6 +358,120 @@ export default function ProductsPage({ params }: PageProps) {
             <ArrowRight className="w-4 h-4 rtl:rotate-180" />
           </Link>
         </div>
+
+        {/* Fullscreen Product Lightbox Modal */}
+        {lightboxIndex !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in p-4 sm:p-6 overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 p-2.5 rounded-full bg-black/55 hover:bg-premium-charcoal/80 border border-white/10 hover:border-primary text-white transition-colors z-50"
+              aria-label="Close lightbox"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Slider Navigation: Prev */}
+            <button
+              onClick={prevSlide}
+              className={`fixed ${lang === "ar" ? "right-4" : "left-4"} top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/55 hover:bg-premium-charcoal/80 border border-white/10 hover:border-primary text-white transition-all z-40`}
+              aria-label="Previous product"
+            >
+              {lang === "ar" ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
+            </button>
+
+            {/* Main Lightbox Content Box */}
+            <div className="relative w-full max-w-5xl bg-premium-charcoal/90 border border-primary/20 rounded-3xl overflow-hidden premium-glass shadow-2xl z-30 max-h-[90vh] overflow-y-auto flex flex-col md:flex-row my-8">
+              
+              {/* Left Side: Product Image */}
+              <div className="w-full md:w-[55%] aspect-square md:aspect-auto md:h-[600px] relative bg-premium-charcoal/40 border-b md:border-b-0 md:border-r border-primary/10 overflow-hidden shrink-0">
+                <Image
+                  src={getOptimizedImageUrl(filteredProducts[lightboxIndex].image, 1200)}
+                  alt={getProductTranslation(filteredProducts[lightboxIndex], lang).name}
+                  fill
+                  className="object-cover md:object-contain p-4"
+                  priority
+                />
+                {/* Code badge overlay */}
+                <div className={`absolute top-4 ${lang === "ar" ? "right-4" : "left-4"} bg-black/70 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-primary-light border border-primary/30 z-10`}>
+                  {filteredProducts[lightboxIndex].code}
+                </div>
+              </div>
+
+              {/* Right Side: Product Details & Specs */}
+              <div className="w-full md:w-[45%] p-6 sm:p-8 flex flex-col justify-between gap-6 text-left rtl:text-right">
+                <div className="space-y-6">
+                  {/* Category & Title */}
+                  <div className="space-y-2">
+                    <span className="inline-block px-2.5 py-1 rounded bg-primary/15 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">
+                      {lang === "ar" 
+                        ? categories.find(c => c.id === (filteredProducts[lightboxIndex].category === 'louver' ? (filteredProducts[lightboxIndex].code.startsWith("E157-") ? 'louver-thick' : 'louver-thin') : filteredProducts[lightboxIndex].category))?.nameAr 
+                        : categories.find(c => c.id === (filteredProducts[lightboxIndex].category === 'louver' ? (filteredProducts[lightboxIndex].code.startsWith("E157-") ? 'louver-thick' : 'louver-thin') : filteredProducts[lightboxIndex].category))?.nameEn
+                      }
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                      {getProductTranslation(filteredProducts[lightboxIndex], lang).name}
+                    </h2>
+                  </div>
+
+                  {/* Dimensions mini grid */}
+                  {filteredProducts[lightboxIndex].widthM > 0 && (
+                    <div className="grid grid-cols-3 gap-2 bg-premium-dark/50 p-3.5 rounded-xl text-xs text-premium-beige/65 border border-primary/10 font-medium">
+                      <div>
+                        <span className="block text-[9px] text-premium-beige/40 uppercase mb-0.5">{lang === "ar" ? "العرض" : "Width"}</span>
+                        <span className="text-white font-bold text-sm">{filteredProducts[lightboxIndex].widthM * 100} cm</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-premium-beige/40 uppercase mb-0.5">{lang === "ar" ? "الارتفاع" : "Height"}</span>
+                        <span className="text-white font-bold text-sm">{filteredProducts[lightboxIndex].heightM} m</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-premium-beige/40 uppercase mb-0.5">{lang === "ar" ? "السمك" : "Thickness"}</span>
+                        <span className="text-white font-bold text-sm">{filteredProducts[lightboxIndex].thicknessMm} mm</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Full Specifications list */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-primary/10 pb-1.5">
+                      {lang === "ar" ? "المواصفات الفنية" : "Technical Specifications"}
+                    </h3>
+                    <ul className="space-y-2.5 text-xs text-premium-beige/85">
+                      {getProductTranslation(filteredProducts[lightboxIndex], lang).specifications.map((spec, sIdx) => (
+                        <li key={sIdx} className="flex items-start gap-2.5">
+                          <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                          <span>{spec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* WhatsApp Enquiry Button */}
+                <a
+                  href={getWhatsAppQuoteLink(filteredProducts[lightboxIndex])}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-sm font-bold text-white hover:scale-102 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 border border-primary-light/10"
+                >
+                  <MessageSquare className="w-5 h-5 shrink-0" />
+                  <span>{lang === "ar" ? "طلب عرض سعر / طلب عينات" : "Inquire & Request Samples"}</span>
+                </a>
+              </div>
+
+            </div>
+
+            {/* Slider Navigation: Next */}
+            <button
+              onClick={nextSlide}
+              className={`fixed ${lang === "ar" ? "left-4" : "right-4"} top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/55 hover:bg-premium-charcoal/80 border border-white/10 hover:border-primary text-white transition-all z-40`}
+              aria-label="Next product"
+            >
+              {lang === "ar" ? <ChevronLeft className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
