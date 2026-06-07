@@ -1725,3 +1725,19 @@ export function getProductTranslation(product: Product, lang: Language) {
     specifications: lang === "ar" ? product.specificationsAr : product.specificationsEn,
   };
 }
+
+export function getOptimizedImageUrl(url: string, width: number, height?: number) {
+  if (!url) return "";
+  if (url.includes("i0.wp.com") || url.includes("lanfawzy.com")) {
+    const cleanUrl = url.split("?")[0];
+    let cdnUrl = cleanUrl;
+    if (!cdnUrl.startsWith("https://i0.wp.com/")) {
+      cdnUrl = cdnUrl.replace("https://", "https://i0.wp.com/");
+    }
+    if (height) {
+      return `${cdnUrl}?resize=${width}%2C${height}&ssl=1`;
+    }
+    return `${cdnUrl}?w=${width}&ssl=1`;
+  }
+  return url;
+}

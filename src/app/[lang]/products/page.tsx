@@ -4,7 +4,7 @@ import React, { useState, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { translations, Language } from "@/data/translations";
-import { productsCatalog, getProductTranslation, Product } from "@/data/products";
+import { productsCatalog, getProductTranslation, getOptimizedImageUrl, Product } from "@/data/products";
 import { Check, Layers, ArrowRight, Download, Search, MessageSquare, Info } from "lucide-react";
 
 interface PageProps {
@@ -217,7 +217,7 @@ export default function ProductsPage({ params }: PageProps) {
                   {/* Image Container */}
                   <div className="relative aspect-square w-full bg-premium-charcoal/40 border-b border-primary/10 overflow-hidden shrink-0">
                     <Image
-                      src={product.image}
+                      src={getOptimizedImageUrl(product.image, 300, 300)}
                       alt={name}
                       fill
                       className="object-cover object-center p-3 rounded-2xl transition-transform duration-500 group-hover:scale-[1.04]"

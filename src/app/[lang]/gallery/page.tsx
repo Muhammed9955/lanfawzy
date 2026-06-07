@@ -3,6 +3,7 @@
 import React, { useState, use, useEffect } from "react";
 import Image from "next/image";
 import { translations, Language } from "@/data/translations";
+import { getOptimizedImageUrl } from "@/data/products";
 import { Compass, MapPin, X, ChevronLeft, ChevronRight, Grid } from "lucide-react";
 
 interface GalleryItem {
@@ -1596,7 +1597,7 @@ export default function GalleryPage({ params }: PageProps) {
                 {/* Image */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-premium-charcoal/50 border-b border-primary/10">
                   <Image
-                    src={item.image}
+                    src={getOptimizedImageUrl(item.image, 400, 300)}
                     alt={title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1656,7 +1657,7 @@ export default function GalleryPage({ params }: PageProps) {
             {/* Image display */}
             <div className="relative w-full max-w-5xl h-[70vh] px-4 select-none">
               <Image
-                src={filteredItems[lightboxIndex].image}
+                src={getOptimizedImageUrl(filteredItems[lightboxIndex].image, 1200)}
                 alt={lang === "ar" ? filteredItems[lightboxIndex].titleAr : filteredItems[lightboxIndex].titleEn}
                 fill
                 className="object-contain"
