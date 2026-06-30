@@ -16,8 +16,8 @@ export default function Navbar({ lang }: { lang: Language }) {
   const navItems = [
     { name: t.navbar.home, href: `/${lang}`, comingSoon: false },
     { name: t.navbar.products, href: `/${lang}/products`, comingSoon: false },
-    { name: t.navbar.visualizer, href: `/${lang}/visualizer`, comingSoon: true },
-    { name: t.navbar.calculator, href: `/${lang}/calculator`, comingSoon: true },
+    { name: t.navbar.visualizer, href: `/${lang}/visualizer`, comingSoon: false },
+    { name: t.navbar.calculator, href: `/${lang}/calculator`, comingSoon: false },
     { name: t.navbar.gallery, href: `/${lang}/gallery`, comingSoon: false },
   ];
 
@@ -64,9 +64,8 @@ export default function Navbar({ lang }: { lang: Language }) {
           {/* Action Area (Language & Contact button) */}
           <div className="hidden md:flex items-center gap-4">
             <LanguageSwitcher currentLang={lang} />
-            {/* Contact button redirects to home in Coming Soon mode */}
             <Link
-              href={`/${lang}`}
+              href={`/${lang}/contact`}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-medium text-sm hover:shadow-[0_0_15px_rgba(176,141,92,0.4)] transition-all duration-300 hover:scale-102"
             >
               <span>{t.navbar.contact}</span>
@@ -111,16 +110,12 @@ export default function Navbar({ lang }: { lang: Language }) {
                 )}
               </Link>
             ))}
-            {/* Contact button redirects to home in Coming Soon mode */}
             <Link
-              href={`/${lang}`}
+              href={`/${lang}/contact`}
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-center gap-2 w-full text-center px-4 py-3.5 mt-4 rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white font-semibold shadow-md"
             >
               {t.navbar.contact}
-              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-white/20 leading-none">
-                {lang === "ar" ? "قريباً" : "Soon"}
-              </span>
             </Link>
           </div>
         </div>
