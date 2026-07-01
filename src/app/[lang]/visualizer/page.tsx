@@ -7,7 +7,8 @@ import { productsCatalog, getProductTranslation } from "@/data/products";
 import { 
   Palette, Eye, ArrowRight, Sparkles, Shield, Info, 
   MessageSquare, Sun, Moon, ZoomIn, ZoomOut, X, Move,
-  Camera, Sliders, LayoutGrid
+  Camera, Sliders, LayoutGrid, Maximize, Minimize,
+  Play, Pause
 } from "lucide-react";
 import * as THREE from "three";
 
@@ -41,6 +42,11 @@ export default function VisualizerPage({ params }: PageProps) {
   const [showFurniture, setShowFurniture] = useState<boolean>(true);
   const [showSidebar, setShowSidebar] = useState<boolean>(false);
 
+  // LED and auto rotate upgrades
+  const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
+  const [isLedActive, setIsLedActive] = useState<boolean>(false);
+  const [ledColor, setLedColor] = useState<string>("#ffdfa9"); // default warm white
+
   // WebGL references
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,16 +64,37 @@ export default function VisualizerPage({ params }: PageProps) {
   const timeOfDayRef = useRef<number>(timeOfDay);
   const showFurnitureRef = useRef<boolean>(showFurniture);
 
+  // LED and auto rotate refs
+  const isAutoRotateRef = useRef<boolean>(isAutoRotate);
+  const isLedActiveRef = useRef<boolean>(isLedActive);
+  const ledColorRef = useRef<string>(ledColor);
+
   useEffect(() => { materialRef.current = activeMaterial; }, [activeMaterial]);
   useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
   useEffect(() => { lightModeRef.current = lightMode; }, [lightMode]);
   useEffect(() => { isZoomedRef.current = isZoomed; }, [isZoomed]);
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => { isCompareModeRef.current = isCompareMode; }, [isCompareMode]);
   useEffect(() => { compareMaterialRef.current = compareMaterial; }, [compareMaterial]);
   useEffect(() => { splitRatioRef.current = splitRatio; }, [splitRatio]);
   useEffect(() => { timeOfDayRef.current = timeOfDay; }, [timeOfDay]);
   useEffect(() => { showFurnitureRef.current = showFurniture; }, [showFurniture]);
+
+  useEffect(() => { isAutoRotateRef.current = isAutoRotate; }, [isAutoRotate]);
+  useEffect(() => { isLedActiveRef.current = isLedActive; }, [isLedActive]);
+  useEffect(() => { ledColorRef.current = ledColor; }, [ledColor]);
 
   // Find corresponding product catalog entry
   const currentProduct = productsCatalog.find((p) => {
@@ -310,6 +337,21 @@ export default function VisualizerPage({ params }: PageProps) {
     const lampLight = new THREE.PointLight("#ff8844", 0, 6);
     lampLight.position.set(2.4, 0.2, 1.2);
     scene.add(lampLight);
+
+    // E. LED Strip lights (shining onto the back wall)
+    const ledLight1 = new THREE.PointLight("#ffdfa9", 0, 5);
+    ledLight1.position.set(-1.5, 1.45, -2.9);
+    scene.add(ledLight1);
+
+    const ledLight2 = new THREE.PointLight("#ffdfa9", 0, 5);
+    ledLight2.position.set(1.5, 1.45, -2.9);
+    scene.add(ledLight2);
+
+    // Glowing LED strip line mesh
+    const ledBarMat = new THREE.MeshBasicMaterial({ color: "#ffdfa9" });
+    const ledBar = new THREE.Mesh(new THREE.BoxGeometry(6, 0.015, 0.015), ledBarMat);
+    ledBar.position.set(0, 1.48, -2.93);
+    roomGroup.add(ledBar);
 
     // 6. Room Box Geometries
     const floorGeo = new THREE.PlaneGeometry(6, 6);
@@ -695,6 +737,9 @@ export default function VisualizerPage({ params }: PageProps) {
       });
 
       // Smooth camera looking angles
+      if (isAutoRotateRef.current && !isDragging) {
+        lon += 0.08;
+      }
       const phi = THREE.MathUtils.degToRad(90 - lat);
       const theta = THREE.MathUtils.degToRad(lon);
 
@@ -773,6 +818,20 @@ export default function VisualizerPage({ params }: PageProps) {
 
       spotLight.intensity += (targetSpot - spotLight.intensity) * 0.08;
       lampLight.intensity += (targetLamp - lampLight.intensity) * 0.08;
+
+      // Sync LED accent lighting
+      const ledActive = isLedActiveRef.current;
+      const ledCol = ledColorRef.current;
+      const targetLedIntensity = ledActive ? 3.2 : 0;
+
+      ledLight1.intensity += (targetLedIntensity - ledLight1.intensity) * 0.08;
+      ledLight2.intensity += (targetLedIntensity - ledLight2.intensity) * 0.08;
+
+      const ledThreeColor = new THREE.Color(ledCol);
+      ledLight1.color.lerp(ledThreeColor, 0.08);
+      ledLight2.color.lerp(ledThreeColor, 0.08);
+      ledBarMat.color.lerp(ledThreeColor, 0.08);
+      ledBar.visible = ledLight1.intensity > 0.05;
 
       // Smooth camera FOV zooming
       const targetFov = isZoomedRef.current ? 18 : 45;
@@ -887,6 +946,7 @@ export default function VisualizerPage({ params }: PageProps) {
       paintCanvasGeo.dispose();
       paintCanvasMat.dispose();
       pillowGeo.dispose();
+      ledBarMat.dispose();
 
       Object.values(textures).forEach((tex) => tex.dispose());
 
@@ -1118,6 +1178,63 @@ export default function VisualizerPage({ params }: PageProps) {
                 <div className="relative w-9 h-5 bg-premium-charcoal peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-premium-beige after:border-primary/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
               </label>
 
+              {/* Auto rotate toggle */}
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Play className="w-4 h-4 text-primary" />
+                  <span>{lang === "en" ? "Cinematic Auto-Rotate" : "تدوير تلقائي سينمائي"}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={isAutoRotate}
+                  onChange={(e) => setIsAutoRotate(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-9 h-5 bg-premium-charcoal peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-premium-beige after:border-primary/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+
+              {/* LED strip toggle */}
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Sun className="w-4 h-4 text-primary animate-pulse" />
+                  <span>{lang === "en" ? "LED Strip Accent Light" : "إضاءة LED المخفية"}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={isLedActive}
+                  onChange={(e) => setIsLedActive(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-9 h-5 bg-premium-charcoal peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-premium-beige after:border-primary/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+
+              {/* LED color picker */}
+              {isLedActive && (
+                <div className="flex items-center justify-between pl-6 rtl:pl-0 rtl:pr-6 py-1 animate-fade-in-up">
+                  <span className="text-[10px] font-semibold text-premium-beige/60">{lang === "en" ? "LED Color" : "لون الإضاءة"}</span>
+                  <div className="flex gap-2">
+                    {[
+                      { hex: "#ffdfa9", label: "Warm" },
+                      { hex: "#e0f0ff", label: "Cool" },
+                      { hex: "#0088ff", label: "Blue" },
+                      { hex: "#00ff88", label: "Green" },
+                    ].map((col) => (
+                      <button
+                        key={col.hex}
+                        onClick={() => setLedColor(col.hex)}
+                        className={`w-4 h-4 rounded-full border transition-all ${
+                          ledColor === col.hex
+                            ? "border-primary scale-125 ring-1 ring-primary/40"
+                            : "border-white/10 hover:scale-110"
+                        }`}
+                        style={{ backgroundColor: col.hex }}
+                        title={col.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Snapshot Button */}
               <button
                 onClick={() => {
@@ -1188,6 +1305,24 @@ export default function VisualizerPage({ params }: PageProps) {
                 title={lang === "en" ? "Inspect Texture Close-up" : "تقريب لمعاينة ملمس الخامة"}
               >
                 {isZoomed ? <ZoomOut className="w-5 h-5 text-primary" /> : <ZoomIn className="w-5 h-5" />}
+              </button>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={() => {
+                  if (!containerRef.current) return;
+                  if (!document.fullscreenElement) {
+                    containerRef.current.requestFullscreen().catch((err) => {
+                      console.error(`Error enabling fullscreen: ${err.message}`);
+                    });
+                  } else {
+                    document.exitFullscreen();
+                  }
+                }}
+                className="p-3.5 rounded-xl bg-black/65 hover:bg-black/80 text-white border border-white/10 hover:border-primary/50 transition-all shadow-md animate-fade-in"
+                title={lang === "en" ? "Toggle Fullscreen View" : "ملء الشاشة"}
+              >
+                {isFullscreen ? <Minimize className="w-5 h-5 text-primary" /> : <Maximize className="w-5 h-5" />}
               </button>
             </div>
 
