@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect } from "react";
 import { translations, Language } from "@/data/translations";
 import {
   Calculator,
@@ -45,6 +45,16 @@ export default function CalculatorPage({ params }: PageProps) {
   const [walls, setWalls] = useState<Wall[]>([
     { id: uid(), width: 3.0, height: 2.8, deductions: [] },
   ]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const product = params.get("product") as ProductCategory;
+      if (product && ["louver", "flat-ps", "flat-pvc", "chipboard"].includes(product)) {
+        setProductType(product);
+      }
+    }
+  }, []);
 
   // ── Wall helpers ──────────────────────────────────────────────────────────
   const addWall = () => {

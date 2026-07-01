@@ -6,7 +6,8 @@ import { translations, Language } from "@/data/translations";
 import { productsCatalog, getProductTranslation } from "@/data/products";
 import { 
   Palette, Eye, ArrowRight, Sparkles, Shield, Info, 
-  MessageSquare, Sun, Moon, ZoomIn, ZoomOut, X, Move
+  MessageSquare, Sun, Moon, ZoomIn, ZoomOut, X, Move,
+  Camera, Sliders, LayoutGrid
 } from "lucide-react";
 import * as THREE from "three";
 
@@ -32,6 +33,14 @@ export default function VisualizerPage({ params }: PageProps) {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [showDragTip, setShowDragTip] = useState<boolean>(true);
 
+  // New upgrade features states
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
+  const [compareMaterial, setCompareMaterial] = useState<MaterialType>("charcoal");
+  const [splitRatio, setSplitRatio] = useState<number>(0.5);
+  const [timeOfDay, setTimeOfDay] = useState<number>(12.0); // hour from 6.0 to 22.0
+  const [showFurniture, setShowFurniture] = useState<boolean>(true);
+  const [showSidebar, setShowSidebar] = useState<boolean>(false);
+
   // WebGL references
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,10 +51,23 @@ export default function VisualizerPage({ params }: PageProps) {
   const lightModeRef = useRef<LightMode>(lightMode);
   const isZoomedRef = useRef<boolean>(isZoomed);
 
+  // Sync references for the new upgrades
+  const isCompareModeRef = useRef<boolean>(isCompareMode);
+  const compareMaterialRef = useRef<MaterialType>(compareMaterial);
+  const splitRatioRef = useRef<number>(splitRatio);
+  const timeOfDayRef = useRef<number>(timeOfDay);
+  const showFurnitureRef = useRef<boolean>(showFurniture);
+
   useEffect(() => { materialRef.current = activeMaterial; }, [activeMaterial]);
   useEffect(() => { roomRef.current = activeRoom; }, [activeRoom]);
   useEffect(() => { lightModeRef.current = lightMode; }, [lightMode]);
   useEffect(() => { isZoomedRef.current = isZoomed; }, [isZoomed]);
+
+  useEffect(() => { isCompareModeRef.current = isCompareMode; }, [isCompareMode]);
+  useEffect(() => { compareMaterialRef.current = compareMaterial; }, [compareMaterial]);
+  useEffect(() => { splitRatioRef.current = splitRatio; }, [splitRatio]);
+  useEffect(() => { timeOfDayRef.current = timeOfDay; }, [timeOfDay]);
+  useEffect(() => { showFurnitureRef.current = showFurniture; }, [showFurniture]);
 
   // Find corresponding product catalog entry
   const currentProduct = productsCatalog.find((p) => {
@@ -54,6 +76,16 @@ export default function VisualizerPage({ params }: PageProps) {
     if (activeMaterial === "walnut") return p.id === "ps-louver-e111";
     if (activeMaterial === "white") return p.id === "ps-louver-e123";
     if (activeMaterial === "marble") return p.id === "chipboard-marble-calacatta";
+    return false;
+  });
+
+  // Find corresponding compare product catalog entry
+  const compareProduct = productsCatalog.find((p) => {
+    if (compareMaterial === "oak") return p.id === "ps-louver-e103";
+    if (compareMaterial === "charcoal") return p.id === "ps-louver-e129";
+    if (compareMaterial === "walnut") return p.id === "ps-louver-e111";
+    if (compareMaterial === "white") return p.id === "ps-louver-e123";
+    if (compareMaterial === "marble") return p.id === "chipboard-marble-calacatta";
     return false;
   });
 
@@ -217,6 +249,7 @@ export default function VisualizerPage({ params }: PageProps) {
       canvas: canvasRef.current,
       antialias: true,
       powerPreference: "high-performance",
+      preserveDrawingBuffer: true,
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -302,11 +335,20 @@ export default function VisualizerPage({ params }: PageProps) {
     roomGroup.add(ceiling);
 
     // Accent Wall (Back wall visualizer target at z = -2.95)
-    const wallMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.1 });
-    const wallBack = new THREE.Mesh(wallGeo, wallMat);
-    wallBack.position.set(0, 0.3, -2.95);
-    wallBack.receiveShadow = true;
-    roomGroup.add(wallBack);
+    // We split it into two meshes (left and right) to support split-screen material comparison.
+    const wallMatLeft = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.1 });
+    const wallMatRight = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.1 });
+    
+    const wallBackLeft = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.6), wallMatLeft);
+    wallBackLeft.position.set(0, 0.3, -2.95);
+    wallBackLeft.receiveShadow = true;
+    roomGroup.add(wallBackLeft);
+
+    const wallBackRight = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 2.6), wallMatRight);
+    wallBackRight.position.set(0, 0.3, -2.95);
+    wallBackRight.receiveShadow = true;
+    wallBackRight.visible = false;
+    roomGroup.add(wallBackRight);
 
     // Left Wall - Features a large glass window
     const wallLeftMat = new THREE.MeshStandardMaterial({ color: "#dedede", roughness: 0.85 });
@@ -598,7 +640,7 @@ export default function VisualizerPage({ params }: PageProps) {
           } else if (hit === hotspotFurniture) {
             setModalType("sample");
           } else if (hit === hotspotLight) {
-            setLightMode((prev) => (prev === "day" ? "night" : "day"));
+            setTimeOfDay((prev) => (prev < 18 ? 20.0 : 12.0));
           }
         }
       }
@@ -670,17 +712,67 @@ export default function VisualizerPage({ params }: PageProps) {
         camera.position.z + currentLookAt.z
       );
 
-      // Smooth Day/Night Lighting transitions
-      const currentLightMode = lightModeRef.current;
-      const targetSun = currentLightMode === "day" ? 2.8 : 0;
-      const targetAmbient = currentLightMode === "day" ? 0.85 : 0.15;
-      const targetSpot = currentLightMode === "day" ? 0 : 5.0;
-      const targetLamp = currentLightMode === "day" ? 0 : 3.5;
+      // Smooth Day/Night & Time-of-Day Lighting transitions
+      const hour = timeOfDayRef.current;
+      let targetSun = 0;
+      let sunColor = new THREE.Color("#fffaf0");
+      let sunPos = new THREE.Vector3(-2.8, 1.2, 0);
+      let targetAmbient = 0.85;
+      let ambientColor = new THREE.Color("#e0f0ff");
+      let targetSpot = 0;
+      let targetLamp = 0;
 
-      sunLight.intensity += (targetSun - sunLight.intensity) * 0.075;
-      ambientLight.intensity += (targetAmbient - ambientLight.intensity) * 0.075;
-      spotLight.intensity += (targetSpot - spotLight.intensity) * 0.075;
-      lampLight.intensity += (targetLamp - lampLight.intensity) * 0.075;
+      if (hour >= 6 && hour < 9) {
+        // Sunrise (6:00 to 9:00)
+        const t = (hour - 6) / 3;
+        targetSun = 0.5 * (1 - t) + 1.8 * t;
+        sunColor.lerpColors(new THREE.Color("#ff5e00"), new THREE.Color("#fffaf0"), t);
+        sunPos.set(-2.8, 0.4 + t * 0.8, -1.0 + t * 1.0);
+        targetAmbient = 0.25 * (1 - t) + 0.65 * t;
+        ambientColor.lerpColors(new THREE.Color("#b8c5d6"), new THREE.Color("#e0f0ff"), t);
+        targetSpot = 0;
+        targetLamp = 1.5 * (1 - t);
+      } else if (hour >= 9 && hour < 15) {
+        // Midday (9:00 to 15:00)
+        const t = (hour - 9) / 6;
+        targetSun = 3.0;
+        sunColor.set("#ffffff");
+        sunPos.set(-2.8, 1.2 + t * 1.3, 0);
+        targetAmbient = 0.9;
+        ambientColor.set("#e0f0ff");
+        targetSpot = 0;
+        targetLamp = 0;
+      } else if (hour >= 15 && hour < 18.5) {
+        // Sunset (15:00 to 18:30)
+        const t = (hour - 15) / 3.5;
+        targetSun = 3.0 * (1 - t) + 1.2 * t;
+        sunColor.lerpColors(new THREE.Color("#ffffff"), new THREE.Color("#ff8822"), t);
+        sunPos.set(-2.8, 2.5 - t * 2.0, 0 + t * 1.0);
+        targetAmbient = 0.9 * (1 - t) + 0.5 * t;
+        ambientColor.lerpColors(new THREE.Color("#e0f0ff"), new THREE.Color("#d8c8b0"), t);
+        targetSpot = 1.0 * t;
+        targetLamp = 2.0 * t;
+      } else {
+        // Night (18:30 to 22:00)
+        const t = (hour - 18.5) / 3.5;
+        targetSun = 1.2 * (1 - t);
+        sunColor.set("#ff8822");
+        sunPos.set(-2.8, 0.5, 1.0);
+        targetAmbient = 0.5 * (1 - t) + 0.12 * t;
+        ambientColor.lerpColors(new THREE.Color("#d8c8b0"), new THREE.Color("#0c0f1a"), t);
+        targetSpot = 1.0 * (1 - t) + 5.5 * t;
+        targetLamp = 2.0 * (1 - t) + 4.0 * t;
+      }
+
+      sunLight.intensity += (targetSun - sunLight.intensity) * 0.08;
+      sunLight.color.lerp(sunColor, 0.08);
+      sunLight.position.lerp(sunPos, 0.08);
+
+      ambientLight.intensity += (targetAmbient - ambientLight.intensity) * 0.08;
+      ambientLight.color.lerp(ambientColor, 0.08);
+
+      spotLight.intensity += (targetSpot - spotLight.intensity) * 0.08;
+      lampLight.intensity += (targetLamp - lampLight.intensity) * 0.08;
 
       // Smooth camera FOV zooming
       const targetFov = isZoomedRef.current ? 18 : 45;
@@ -689,21 +781,60 @@ export default function VisualizerPage({ params }: PageProps) {
         camera.updateProjectionMatrix();
       }
 
-      // Sync active wall material texture
+      // Sync active wall material texture & Split-Screen comparison geometry
+      const activeCompare = isCompareModeRef.current;
+      const activeRatio = splitRatioRef.current;
       const activeMatKey = materialRef.current;
-      if (wallMat.map !== textures[activeMatKey]) {
-        wallMat.map = textures[activeMatKey];
-        wallMat.needsUpdate = true;
+      const compareMatKey = compareMaterialRef.current;
+
+      if (activeCompare) {
+        const leftWidth = 6.0 * activeRatio;
+        const rightWidth = 6.0 * (1.0 - activeRatio);
+
+        // Adjust left wall geometry & position
+        wallBackLeft.geometry.dispose();
+        wallBackLeft.geometry = new THREE.PlaneGeometry(leftWidth, 2.6);
+        wallBackLeft.position.x = -3.0 + leftWidth / 2;
+
+        // Adjust right wall geometry & position
+        wallBackRight.geometry.dispose();
+        wallBackRight.geometry = new THREE.PlaneGeometry(rightWidth, 2.6);
+        wallBackRight.position.x = 3.0 - rightWidth / 2;
+        wallBackRight.visible = true;
+
+        if (wallMatLeft.map !== textures[activeMatKey]) {
+          wallMatLeft.map = textures[activeMatKey];
+          wallMatLeft.needsUpdate = true;
+        }
+
+        if (wallMatRight.map !== textures[compareMatKey]) {
+          wallMatRight.map = textures[compareMatKey];
+          wallMatRight.needsUpdate = true;
+        }
+      } else {
+        // Single material mode
+        if (wallBackLeft.position.x !== 0 || wallBackRight.visible) {
+          wallBackLeft.geometry.dispose();
+          wallBackLeft.geometry = new THREE.PlaneGeometry(6.0, 2.6);
+          wallBackLeft.position.x = 0;
+          wallBackRight.visible = false;
+        }
+        if (wallMatLeft.map !== textures[activeMatKey]) {
+          wallMatLeft.map = textures[activeMatKey];
+          wallMatLeft.needsUpdate = true;
+        }
       }
 
-      // Sync active room furniture meshes visibility
+      // Sync active room furniture meshes visibility and focus mode toggle
       const activeRoomKey = roomRef.current;
-      sofaGroup.visible = activeRoomKey === "living";
-      deskGroup.visible = activeRoomKey === "office";
-      bedGroup.visible = activeRoomKey === "bedroom";
+      const isFurnitureVisible = showFurnitureRef.current;
+      
+      sofaGroup.visible = isFurnitureVisible && activeRoomKey === "living";
+      deskGroup.visible = isFurnitureVisible && activeRoomKey === "office";
+      bedGroup.visible = isFurnitureVisible && activeRoomKey === "bedroom";
 
       // Toggle floor baseboard trim position based on bed placement
-      trimBack.visible = activeRoomKey !== "bedroom";
+      trimBack.visible = isFurnitureVisible && activeRoomKey !== "bedroom";
 
       renderer.render(scene, camera);
       reqId = requestAnimationFrame(tick);
@@ -742,7 +873,8 @@ export default function VisualizerPage({ params }: PageProps) {
       wallGeo.dispose();
       ceilingMat.dispose();
       floorMat.dispose();
-      wallMat.dispose();
+      wallMatLeft.dispose();
+      wallMatRight.dispose();
       wallLeftMat.dispose();
       windowGeo.dispose();
       windowMat.dispose();
@@ -796,10 +928,10 @@ export default function VisualizerPage({ params }: PageProps) {
         {/* Studio Workspace Split Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-stretch">
           {/* Controls Panel */}
-          <div className="lg:col-span-1 flex flex-col gap-6 premium-glass p-8 rounded-2xl border border-primary/15 self-start z-10">
+          <div className="lg:col-span-1 flex flex-col gap-5 premium-glass p-6 sm:p-8 rounded-2xl border border-primary/15 self-start z-10">
             {/* Room Style Selection */}
             <div>
-              <h2 className="text-sm font-bold text-white mb-3.5 flex items-center gap-2">
+              <h2 className="text-sm font-bold text-white mb-2.5 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span>{t.visualizer.selectRoom}</span>
               </h2>
@@ -808,7 +940,7 @@ export default function VisualizerPage({ params }: PageProps) {
                   <button
                     key={room}
                     onClick={() => setActiveRoom(room)}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition-all ${
+                    className={`py-2 px-2.5 rounded-xl text-xs font-semibold text-center transition-all ${
                       activeRoom === room
                         ? "bg-primary text-white font-bold"
                         : "bg-premium-charcoal text-premium-beige hover:bg-premium-charcoal/80"
@@ -822,27 +954,62 @@ export default function VisualizerPage({ params }: PageProps) {
 
             <hr className="border-primary/10" />
 
+            {/* Time of Day Mood Control */}
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sun className="w-4 h-4 text-primary animate-spin-slow" />
+                  <span>{lang === "en" ? "Time of Day" : "الوقت من اليوم"}</span>
+                </h2>
+                <span className="text-xs font-mono text-primary-light">
+                  {(() => {
+                    const hrs = Math.floor(timeOfDay);
+                    const mins = Math.floor((timeOfDay - hrs) * 60).toString().padStart(2, "0");
+                    const ampm = hrs >= 12 ? (lang === "en" ? "PM" : "مساءً") : (lang === "en" ? "AM" : "صباحاً");
+                    const dispHrs = hrs > 12 ? hrs - 12 : hrs === 0 ? 12 : hrs;
+                    return `${dispHrs}:${mins} ${ampm}`;
+                  })()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="6.0"
+                max="22.0"
+                step="0.25"
+                value={timeOfDay}
+                onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-premium-charcoal rounded-lg appearance-none cursor-pointer accent-primary border border-primary/20 focus:outline-none"
+              />
+              <div className="flex justify-between text-[9px] text-premium-beige/55 mt-1.5 font-semibold">
+                <span>{lang === "en" ? "Sunrise" : "الشروق"}</span>
+                <span>{lang === "en" ? "Noon" : "الظهيرة"}</span>
+                <span>{lang === "en" ? "Sunset" : "الغروب"}</span>
+                <span>{lang === "en" ? "Night" : "الليل"}</span>
+              </div>
+            </div>
+
+            <hr className="border-primary/10" />
+
             {/* Material Texture Selection */}
             <div>
-              <h2 className="text-sm font-bold text-white mb-3.5 flex items-center gap-2">
+              <h2 className="text-sm font-bold text-white mb-2.5 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-primary" />
-                <span>{t.visualizer.selectMaterial}</span>
+                <span>{isCompareMode ? (lang === "en" ? "Left Side Material" : "خامة الجانب الأيسر") : t.visualizer.selectMaterial}</span>
               </h2>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 {(["oak", "charcoal", "walnut", "white", "marble"] as MaterialType[]).map((material) => (
                   <button
                     key={material}
                     onClick={() => setActiveMaterial(material)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-sm text-left rtl:text-right font-medium transition-all ${
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left rtl:text-right font-medium transition-all ${
                       activeMaterial === material
                         ? "border-primary bg-primary/15 text-primary-light"
                         : "border-primary/10 bg-premium-charcoal hover:border-primary/45 hover:bg-premium-charcoal/85"
                     }`}
                   >
                     <span>{t.visualizer.materials[material]}</span>
-                    {/* Circle Color Preview */}
                     <span
-                      className={`w-5 h-5 rounded-full border border-white/20 shadow-inner ${
+                      className={`w-4 h-4 rounded-full border border-white/20 shadow-inner ${
                         material === "oak"
                           ? "bg-[#e5d5be]"
                           : material === "charcoal"
@@ -859,13 +1026,132 @@ export default function VisualizerPage({ params }: PageProps) {
               </div>
             </div>
 
+            {/* Compare Mode Toggle */}
+            <div className="pt-2 border-t border-primary/10">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-primary" />
+                  <span>{lang === "en" ? "Split Comparison Mode" : "وضع المقارنة الثنائية"}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={isCompareMode}
+                  onChange={(e) => setIsCompareMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-9 h-5 bg-premium-charcoal peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-premium-beige after:border-primary/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+            </div>
+
+            {/* Compare Material Swatches */}
+            {isCompareMode && (
+              <div className="space-y-2.5 animate-fade-in-up">
+                <h2 className="text-xs font-bold text-white flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-primary-light" />
+                  <span>{lang === "en" ? "Right Side Material" : "خامة الجانب الأيمن"}</span>
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {(["oak", "charcoal", "walnut", "white", "marble"] as MaterialType[]).map((material) => (
+                    <button
+                      key={material}
+                      onClick={() => setCompareMaterial(material)}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs text-left rtl:text-right font-medium transition-all ${
+                        compareMaterial === material
+                          ? "border-primary-light bg-primary/10 text-primary-light"
+                          : "border-primary/10 bg-premium-charcoal hover:border-primary/45 hover:bg-premium-charcoal/85"
+                      }`}
+                    >
+                      <span>{t.visualizer.materials[material]}</span>
+                      <span
+                        className={`w-4 h-4 rounded-full border border-white/20 shadow-inner ${
+                          material === "oak"
+                            ? "bg-[#e5d5be]"
+                            : material === "charcoal"
+                            ? "bg-[#212124]"
+                            : material === "walnut"
+                            ? "bg-[#7c5f3e]"
+                            : material === "white"
+                            ? "bg-[#f5f5f7]"
+                            : "bg-[#f5f2eb]"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Split ratio slider */}
+                <div className="pt-2">
+                  <div className="flex justify-between text-[10px] text-premium-beige/60 font-semibold mb-1">
+                    <span>{lang === "en" ? "Left Side" : "الجانب الأيسر"}</span>
+                    <span>{Math.round(splitRatio * 100)}%</span>
+                    <span>{lang === "en" ? "Right Side" : "الجانب الأيمن"}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.95"
+                    step="0.01"
+                    value={splitRatio}
+                    onChange={(e) => setSplitRatio(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-premium-charcoal rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                </div>
+              </div>
+            )}
+
             <hr className="border-primary/10" />
 
+            {/* Extra Toggles: Focus mode & Snapshot */}
+            <div className="flex flex-col gap-2.5">
+              {/* Focus mode toggle */}
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-primary" />
+                  <span>{lang === "en" ? "Show Room Furniture" : "إظهار أثاث الغرفة"}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={showFurniture}
+                  onChange={(e) => setShowFurniture(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-9 h-5 bg-premium-charcoal peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-premium-beige after:border-primary/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+
+              {/* Snapshot Button */}
+              <button
+                onClick={() => {
+                  if (!canvasRef.current) return;
+                  const url = canvasRef.current.toDataURL("image/jpeg", 0.95);
+                  const link = document.createElement("a");
+                  link.download = `lanfawzy-3d-visualizer-${activeRoom}-${activeMaterial}.jpg`;
+                  link.href = url;
+                  link.click();
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 mt-2 py-3 px-4 rounded-xl border border-primary/40 text-primary-light hover:border-primary hover:bg-primary/5 font-bold transition-all text-xs"
+              >
+                <Camera className="w-4 h-4" />
+                <span>{lang === "en" ? "Take Design Snapshot" : "التقاط صورة للتصميم"}</span>
+              </button>
+
+              {/* Catalog sidebar toggle button */}
+              <button
+                onClick={() => setShowSidebar(prev => !prev)}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-premium-charcoal/80 border border-primary/20 text-premium-beige hover:border-primary/40 hover:bg-premium-charcoal font-bold transition-all text-xs"
+              >
+                <Info className="w-4 h-4 text-primary" />
+                <span>{lang === "en" ? "View Material Specifications" : "عرض مواصفات الخامة"}</span>
+              </button>
+            </div>
+
+            <hr className="border-primary/10" />
+
+            {/* Redirect to matching material calculator */}
             <Link
-              href={`/${lang}/calculator`}
-              className="inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl border border-primary text-primary hover:bg-primary/10 font-bold transition-all text-sm mt-1"
+              href={`/${lang}/calculator?product=${currentProduct?.category === "chipboard" ? "chipboard" : "louver"}`}
+              className="inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-[0_0_15px_rgba(176,141,92,0.4)] transition-all font-bold text-sm mt-1"
             >
-              <span>{t.calculator.title}</span>
+              <span>{lang === "en" ? "Send to Material Calculator" : "حساب الكميات في حاسبة المواد"}</span>
               <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </Link>
           </div>
@@ -895,19 +1181,10 @@ export default function VisualizerPage({ params }: PageProps) {
 
             {/* Quick action buttons floating on the right */}
             <div className="absolute top-5 right-5 rtl:right-auto rtl:left-5 z-20 flex flex-col gap-2.5">
-              {/* Day / Night Toggle */}
-              <button
-                onClick={() => setLightMode(prev => prev === "day" ? "night" : "day")}
-                className="p-3.5 rounded-xl bg-black/65 hover:bg-black/80 text-white border border-white/10 hover:border-primary/50 transition-all shadow-md"
-                title={lang === "en" ? "Toggle Day/Night Lighting" : "تبديل إضاءة النهار/الليل"}
-              >
-                {lightMode === "day" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-primary" />}
-              </button>
-
               {/* Zoom In / Zoom Out */}
               <button
                 onClick={() => setIsZoomed(prev => !prev)}
-                className="p-3.5 rounded-xl bg-black/65 hover:bg-black/80 text-white border border-white/10 hover:border-primary/50 transition-all shadow-md"
+                className="p-3.5 rounded-xl bg-black/65 hover:bg-black/80 text-white border border-white/10 hover:border-primary/50 transition-all shadow-md animate-fade-in"
                 title={lang === "en" ? "Inspect Texture Close-up" : "تقريب لمعاينة ملمس الخامة"}
               >
                 {isZoomed ? <ZoomOut className="w-5 h-5 text-primary" /> : <ZoomIn className="w-5 h-5" />}
@@ -915,10 +1192,10 @@ export default function VisualizerPage({ params }: PageProps) {
             </div>
 
             {/* Specifications Details Overlay Card (Top Left - absolute overlay) */}
-            {currentProduct && (
+            {currentProduct && !isCompareMode && (
               <div className="absolute top-5 left-5 rtl:left-auto rtl:right-5 z-20 max-w-[240px] sm:max-w-xs premium-glass p-4 rounded-xl text-left rtl:text-right text-xs shadow-lg animate-fade-in-up">
                 <div 
-                  onClick={() => setModalType("specs")}
+                  onClick={() => setShowSidebar(true)}
                   className="flex items-center gap-1.5 text-primary-light font-bold uppercase tracking-wider mb-2 cursor-pointer hover:underline"
                 >
                   <Info className="w-3.5 h-3.5" />
@@ -928,6 +1205,82 @@ export default function VisualizerPage({ params }: PageProps) {
                 <p className="text-[11px] text-premium-beige/65">
                   {lang === "en" ? "Click gold pulsing rings to interact" : "اضغط على الحلقات الذهبية للتفاعل"}
                 </p>
+              </div>
+            )}
+
+            {/* Slide-out Product Details Sidebar */}
+            {showSidebar && currentProduct && (
+              <div className="absolute top-0 bottom-0 right-0 rtl:right-auto rtl:left-0 w-80 max-w-full z-40 premium-glass border-l border-primary/20 backdrop-blur-lg p-6 shadow-2xl flex flex-col justify-between animate-fade-in-up text-left rtl:text-right">
+                <div className="flex-grow overflow-y-auto">
+                  <div className="flex items-center justify-between border-b border-primary/10 pb-3 mb-5">
+                    <div className="flex items-center gap-2">
+                      <Info className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-bold text-white uppercase tracking-wider">
+                        {currentProduct.code} {lang === "en" ? "Specs" : "المواصفات"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowSidebar(false)}
+                      className="p-1 rounded-lg text-premium-beige/60 hover:text-white hover:bg-white/5 transition-all"
+                    >
+                      <X className="w-4.5 h-4.5" />
+                    </button>
+                  </div>
+
+                  {/* Close-up Swatch Photo */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentProduct.image}
+                    alt={productName}
+                    className="w-full h-28 object-cover rounded-xl border border-primary/15 mb-5 shrink-0"
+                  />
+
+                  <h3 className="text-base font-bold text-white mb-2 leading-snug">{productName}</h3>
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/25 text-[10px] font-bold text-primary-light uppercase tracking-wider mb-5">
+                    {currentProduct.category === "louver" ? t.products.louver.title : t.products.chipboard.title}
+                  </span>
+
+                  {/* Dimensions Table */}
+                  <div className="space-y-2 text-xs bg-premium-charcoal/40 border border-primary/5 rounded-xl p-3 mb-5 font-medium">
+                    <div className="flex justify-between">
+                      <span className="text-premium-beige/50">{lang === "en" ? "Dimensions" : "الأبعاد"}</span>
+                      <span className="text-white font-bold">{currentProduct.category === "louver" ? "12cm x 290cm" : "122cm x 280cm"}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-primary/5 pt-2">
+                      <span className="text-premium-beige/50">{lang === "en" ? "Thickness" : "السمك"}</span>
+                      <span className="text-white font-bold">{currentProduct.thicknessMm}mm</span>
+                    </div>
+                    <div className="flex justify-between border-t border-primary/5 pt-2">
+                      <span className="text-premium-beige/50">{lang === "en" ? "Coverage / Unit" : "نسبة تغطية اللوح"}</span>
+                      <span className="text-white font-bold">{currentProduct.coveragePerUnitSqm} sqm</span>
+                    </div>
+                  </div>
+
+                  {/* Spec Bullet List */}
+                  <div className="space-y-2 mb-5">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">{lang === "en" ? "Key Features" : "أهم المميزات"}</h4>
+                    <ul className="space-y-2 text-xs text-premium-beige/75">
+                      {specifications.map((spec, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>{spec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="border-t border-primary/10 pt-4 mt-auto">
+                  <a
+                    href={getSampleWhatsAppLink()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-xs hover:shadow-[0_0_15px_rgba(176,141,92,0.4)] hover:scale-102 transition-all duration-300"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{lang === "en" ? "Order Sample Box" : "طلب علبة العينات"}</span>
+                  </a>
+                </div>
               </div>
             )}
 
