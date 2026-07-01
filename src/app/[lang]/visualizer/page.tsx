@@ -738,7 +738,7 @@ export default function VisualizerPage({ params }: PageProps) {
 
       // Smooth camera looking angles
       if (isAutoRotateRef.current && !isDragging) {
-        lon += 0.08;
+        lon += 0.22;
       }
       const phi = THREE.MathUtils.degToRad(90 - lat);
       const theta = THREE.MathUtils.degToRad(lon);
